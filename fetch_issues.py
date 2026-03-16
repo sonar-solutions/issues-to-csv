@@ -18,12 +18,24 @@ FIELDS = ["project", "rule", "severity", "author", "effort", "creationDate", "up
 def load_config() -> tuple[str, str]:
     with open(ENDPOINT_FILE) as f:
         cfg = json.load(f)
-    return cfg["endpoint_url"].rstrip("/"), cfg["endpoint_token"]
+    raw_url = cfg["endpoint_url"].rstrip("/")
+    parsed = urllib.parse.urlparse(raw_url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise ValueError(f"Invalid endpoint_url in config: {raw_url!r}")
+    return raw_url, cfg["endpoint_token"]
 
 
 def fetch_page(base_url: str, token: str, page: int) -> dict:
+    parsed = urllib.parse.urlparse(base_url)
     params = urllib.parse.urlencode({"p": page, "ps": PAGE_SIZE})
-    url = f"{base_url}/api/issues/search?{params}"
+    url = urllib.parse.urlunparse((
+        parsed.scheme,
+        parsed.netloc,
+        "/api/issues/search",
+        "",
+        params,
+        "",
+    ))
     request = urllib.request.Request(url, method="GET")
     # SonarQube token auth: token as username, empty password
     import base64
