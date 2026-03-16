@@ -2,9 +2,17 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
+      - dev
   pull_request:
     types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for triggering this workflow"
+        required: false
+        default: "manual run"
+
 jobs:
   sonarqube:
     name: SonarQube
